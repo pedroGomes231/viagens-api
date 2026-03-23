@@ -1,19 +1,12 @@
 from pydantic import BaseModel
+from typing import Optional
 
-class VeiculoCreate(BaseModel):
+class VeiculoSchema(BaseModel):
+    id_veiculo: Optional[int] = None
     placa: str
-    cor: str
-    ano: int
-    modelo_id: int
-    combustivel_id: int
-
-class VeiculoOut(BaseModel):
-    id: int
-    placa: str
-    cor: str
-    ano: int
-    modelo_id: int
-    combustivel_id: int
+    id_modelo: int
+    tem_seguro: int
+    id_classe: int
 
     class Config:
         from_attributes = True

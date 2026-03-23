@@ -1,54 +1,51 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.motorista_veiculo import MotoristaVeiculo
-from app.schema.motorista_veiculo import MotoristaVeiculoCreate, MotoristaVeiculoOut
+from app.schema.motorista_veiculo import MotoristaVeiculoSchema
 
-router = APIRouter(prefix="/motorista_veiculo",tags=["motorista veiculo"])
+motorista_veiculo = APIRouter()
 
-
-@router.post("/", response_model=MotoristaVeiculoOut)
-def criar(dados: MotoristaVeiculoCreate, db: Session = Depends(get_db)):
-    novo = MotoristaVeiculo(**dados.model_dump())
-    db.add(novo)
+@motorista_veiculo.post("/")
+async def criar_motorista_veiculo(dados: MotoristaVeiculoSchema, db: Session = Depends(get_db)):
+    novo_registro = MotoristaVeiculo(**dados.model_dump())
+    db.add(novo_registro)
     db.commit()
-    db.refresh(novo)
-    return novo
+    db.refresh(novo_registro)
+    return novo_registro
 
-#Listar todas as classes
-@router.get("/", response_model=list[MotoristaVeiculoOut])
-def listar(db: Session = Depends(get_db)):
+@motorista_veiculo.get("/")
+async def listar_motorista_veiculo(db: Session = Depends(get_db)):
     return db.query(MotoristaVeiculo).all()
 
-#Buscar por id da classe
-@router.get("/{id}", response_model=MotoristaVeiculoOut)
-def buscar(id: int, db: Session = Depends(get_db)):
-    novo = db.query(MotoristaVeiculo).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="Motorista não encontrado")
-    return novo
+@motorista_veiculo.delete("/{id_motorista}/{id_veiculo}/delete")
+async def deletar_motorista_veiculo(id_motorista: int, id_veiculo: int, db: Session = Depends(get_db)):
+    registro_encontrado = db.query(MotoristaVeiculo).filter(
+        MotoristaVeiculo.id_motorista == id_motorista,
+        MotoristaVeiculo.id_veiculo == id_veiculo
+    ).first()
+    
+    if not registro_encontrado:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Registro não encontrado.")
+    
+    db.delete(registro_encontrado)
+    db.commit()
+    return {"registro deletado com sucesso"}
 
+@motorista_veiculo.put("/{id_motorista}/{id_veiculo}")
+async def atualizar_motorista_veiculo(id_motorista: int, id_veiculo: int, dados: MotoristaVeiculoSchema = Depends(), db: Session = Depends(get_db)):
+    registro_encontrado = db.query(MotoristaVeiculo).filter(
+        MotoristaVeiculo.id_motorista == id_motorista,
+        MotoristaVeiculo.id_veiculo == id_veiculo
+    ).first()
 
-@router.put("/{id}", response_model=MotoristaVeiculoOut)
-def atualizar(id: int, dados: MotoristaVeiculoCreate, db: Session = Depends(get_db)):
-    novo = db.query(MotoristaVeiculo).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="Motorista não encontrado")
-
-    for campo, valor in dados.model_dump().items():
-        setattr(novo, campo, valor)
+    if not registro_encontrado:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registro não encontrado")       
+    
+    dados_atualizados = dados.model_dump(exclude_unset=True)
+    for chave, valor in dados_atualizados.items():
+        setattr(registro_encontrado, chave, valor)
 
     db.commit()
-    db.refresh(novo)
-    return novo
-
-#Deletar a classe
-@router.delete("/{id}")
-def deletar(id: int, db: Session = Depends(get_db)):
-    novo = db.query(MotoristaVeiculo).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="MOtorista não encontrado")
-
-    db.delete(novo)
-    db.commit()
-    return {"ok": True}
+    db.refresh(registro_encontrado)
+    return registro_encontrado

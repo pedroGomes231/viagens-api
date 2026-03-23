@@ -1,54 +1,52 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.servico import Servico
-from app.schema.servico import ServicoCreate, ServicoOut
+from app.schema.servico import ServicoSchema
 
-router = APIRouter(prefix="/servico",tags=["Servico"])
+servico = APIRouter()
 
-
-@router.post("/", response_model=ServicoOut)
-def criar(dados: ServicoCreate, db: Session = Depends(get_db)):
-    novo = Servico(**dados.model_dump())
-    db.add(novo)
+@servico.post("/")
+async def criar_servico(dados: ServicoSchema, db: Session = Depends(get_db)):
+    novo_servico = Servico(**dados.model_dump())
+    db.add(novo_servico)
     db.commit()
-    db.refresh(novo)
-    return novo
+    db.refresh(novo_servico)
+    return novo_servico
 
-#Listar todas as classes
-@router.get("/", response_model=list[ServicoOut])
-def listar(db: Session = Depends(get_db)):
+@servico.get("/")
+async def listar_servico(db: Session = Depends(get_db)):
     return db.query(Servico).all()
 
-#Buscar por id da classe
-@router.get("/{id}", response_model=ServicoOut)
-def buscar(id: int, db: Session = Depends(get_db)):
-    novo = db.query(Servico).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="Servico não encontrado")
-    return novo
+@servico.delete("/{id}/delete")
+async def deletar_servico(id: int, db: Session = Depends(get_db)):
+    servico_encontrado = db.query(Servico).filter(Servico.id_servico == id).first()
+    
+    if not servico_encontrado:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail = f"o servico com id {id} nao foi encontrado.")
+    
+    db.delete(servico_encontrado)
+    db.commit()
+    
+    return {"servico deletado com sucesso"}
 
+@servico.put("/{id}")
+async def atualizar_servico(id: int, dados: ServicoSchema = Depends(), db: Session = Depends(get_db)):
+    servico_encontrado = db.query(Servico).filter(Servico.id_servico == id).first()
 
-@router.put("/{id}", response_model=ServicoOut)
-def atualizar(id: int, dados: ServicoCreate, db: Session = Depends(get_db)):
-    novo = db.query(Servico).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="Servico não encontrado")
+    if not servico_encontrado:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"servico com {id} nao encontrado",
+        )       
+    
+    dados_atualizados = dados.model_dump(exclude_unset=True)
 
-    for campo, valor in dados.model_dump().items():
-        setattr(novo, campo, valor)
+    for chave, valor in dados_atualizados.items():
+        setattr(servico_encontrado, chave, valor)
 
     db.commit()
-    db.refresh(novo)
-    return novo
-
-#Deletar a classe
-@router.delete("/{id}")
-def deletar(id: int, db: Session = Depends(get_db)):
-    novo = db.query(Servico).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="Servico não encontrado")
-
-    db.delete(novo)
-    db.commit()
-    return {"ok": True}
+    db.refresh(servico_encontrado)
+    return servico_encontrado

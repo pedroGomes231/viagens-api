@@ -1,55 +1,52 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import metodo_pagamento
 from app.models.metodo_pagamento import MetodoPagamento
-from app.schema.metodo_pagamento import MetodoPagamentoCreate, MetodoPagamentoOut
+from app.schema.metodo_pagamento import MetodoPagamentoSchema
 
-router = APIRouter(prefix="/metodo_pagamento",tags=["metodo pagamento"])
+metodo_pagamento = APIRouter()
 
-
-@router.post("/", response_model=MetodoPagamentoOut)
-def criar(dados: MetodoPagamentoCreate, db: Session = Depends(get_db)):
-    novo = MetodoPagamento (**dados.model_dump())
-    db.add(novo)
+@metodo_pagamento.post("/")
+async def criar_metodo_pagamento(dados: MetodoPagamentoSchema, db: Session = Depends(get_db)):
+    novo_metodo = MetodoPagamento(**dados.model_dump())
+    db.add(novo_metodo)
     db.commit()
-    db.refresh(novo)
-    return novo
+    db.refresh(novo_metodo)
+    return novo_metodo
 
-#Listar todas as classes
-@router.get("/", response_model=list[MetodoPagamentoOut])
-def listar(db: Session = Depends(get_db)):
-    return db.query(metodo_pagamento).all()
+@metodo_pagamento.get("/")
+async def listar_metodo_pagamento(db: Session = Depends(get_db)):
+    return db.query(MetodoPagamento).all()
 
-#Buscar por id da classe
-@router.get("/{id}", response_model=MetodoPagamentoOut)
-def buscar(id: int, db: Session = Depends(get_db)):
-    novo = db.query(metodo_pagamento).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="Metodo de pagamento não encontrada")
-    return novo
+@metodo_pagamento.delete("/{id}/delete")
+async def deletar_metodo_pagamento(id: int, db: Session = Depends(get_db)):
+    metodo_encontrado = db.query(MetodoPagamento).filter(MetodoPagamento.id_metodo_pagamento == id).first()
+    
+    if not metodo_encontrado:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail = f"o metodo de pagamento com id {id} nao foi encontrado.")
+    
+    db.delete(metodo_encontrado)
+    db.commit()
+    
+    return {"metodo de pagamento deletado com sucesso"}
 
+@metodo_pagamento.put("/{id}")
+async def atualizar_metodo_pagamento(id: int, dados: MetodoPagamentoSchema = Depends(), db: Session = Depends(get_db)):
+    metodo_encontrado = db.query(MetodoPagamento).filter(MetodoPagamento.id_metodo_pagamento == id).first()
 
-@router.put("/{id}", response_model=MetodoPagamentoOut)
-def atualizar(id: int, dados: MetodoPagamentoCreate, db: Session = Depends(get_db)):
-    novo = db.query(metodo_pagamento).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="metodo de pagamento não encontrada")
+    if not metodo_encontrado:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"metodo de pagamento com {id} nao encontrado",
+        )       
+    
+    dados_atualizados = dados.model_dump(exclude_unset=True)
 
-    for campo, valor in dados.model_dump().items():
-        setattr(novo, campo, valor)
+    for chave, valor in dados_atualizados.items():
+        setattr(metodo_encontrado, chave, valor)
 
     db.commit()
-    db.refresh(novo)
-    return novo
-
-#Deletar a classe
-@router.delete("/{id}")
-def deletar(id: int, db: Session = Depends(get_db)):
-    novo = db.query(metodo_pagamento).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="Metodo de pagamento não encontrada")
-
-    db.delete(novo)
-    db.commit()
-    return {"ok": True}
+    db.refresh(metodo_encontrado)
+    return metodo_encontrado

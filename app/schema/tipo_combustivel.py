@@ -1,11 +1,9 @@
 from pydantic import BaseModel
+from decimal import Decimal
 
-class TipoCombustivelCreate(BaseModel):
-    nome: str
-
-class TipoCombustivelOut(BaseModel):
-    id: int
-    nome: str
+class TipoCombustivelSchema(BaseModel):
+    descricao: str
+    fator_carbono: Decimal
 
     class Config:
         from_attributes = True

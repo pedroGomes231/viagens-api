@@ -1,11 +1,10 @@
 from pydantic import BaseModel
+from decimal import Decimal
 
-class ClasseCreate(BaseModel):
-    nome: str
-
-class ClasseOut(BaseModel):
-    id: int
-    nome: str
+class ClasseSchema(BaseModel):
+    
+    nome_classe: str
+    fator_preco: Decimal
 
     class Config:
         from_attributes = True

@@ -1,17 +1,14 @@
 from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+from decimal import Decimal
 
-class PagamentoCreate(BaseModel):
-    corrida_id: int
-    metodo_id: int
-    valor: int
-    status: str
-
-class PagamentoOut(BaseModel):
-    id: int
-    corrida_id: int
-    metodo_id: int
-    valor: int
-    status: str
+class PagamentoSchema(BaseModel):
+    id_pagamento: Optional[int] = None
+    id_corrida: int
+    valor: Decimal
+    id_metodo_pagamento: int
+    datahora_transacao: datetime
 
     class Config:
         from_attributes = True

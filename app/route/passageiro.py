@@ -1,55 +1,45 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import passageiro
 from app.models.passageiro import Passageiro
-from app.schema.passageiro import PassageiroCreate, PassageiroOut
+from app.schema.passageiro import PassageiroSchema
 
-router = APIRouter(prefix="/passageiro",tags=["Passageiro"])
+passageiro = APIRouter()
 
-
-@router.post("/", response_model=PassageiroOut)
-def criar(dados: PassageiroCreate, db: Session = Depends(get_db)):
-    novo = Passageiro(**dados.model_dump())
-    db.add(novo)
+@passageiro.post("/")
+async def criar_passageiro(dados: PassageiroSchema, db: Session = Depends(get_db)):
+    novo_passageiro = Passageiro(**dados.model_dump())
+    db.add(novo_passageiro)
     db.commit()
-    db.refresh(novo)
-    return novo
+    db.refresh(novo_passageiro)
+    return novo_passageiro
 
-#Listar todas as classes
-@router.get("/", response_model=list[PassageiroOut])
-def listar(db: Session = Depends(get_db)):
+@passageiro.get("/")
+async def listar_passageiro(db: Session = Depends(get_db)):
     return db.query(Passageiro).all()
 
-#Buscar por id da classe
-@router.get("/{id}", response_model=PassageiroOut)
-def buscar(id: int, db: Session = Depends(get_db)):
-    novo = db.query(Passageiro).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="Nenhum Passageiro encontrado")
-    return novo
+@passageiro.delete("/{id}/delete")
+async def deletar_passageiro(id: int, db: Session = Depends(get_db)):
+    passageiro_encontrado = db.query(Passageiro).filter(Passageiro.id_passageiro == id).first()
+    
+    if not passageiro_encontrado:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail = f"o passageiro com id {id} nao foi encontrado.")
+    
+    db.delete(passageiro_encontrado)
+    db.commit()
+    return {"passageiro deletado com sucesso"}
 
+@passageiro.put("/{id}")
+async def atualizar_passageiro(id: int, dados: PassageiroSchema, db: Session = Depends(get_db)):
+    passageiro_encontrado = db.query(Passageiro).filter(Passageiro.id_passageiro == id).first()
 
-@router.put("/{id}", response_model=PassageiroOut)
-def atualizar(id: int, dados: PassageiroCreate, db: Session = Depends(get_db)):
-    novo = db.query(passageiro).get(id)
-    if not novo:
-        raise HTTPException(status_code=404, detail="Nenhum Passageiro não encontrado")
-
-    for campo, valor in dados.model_dump().items():
-        setattr(novo, campo, valor)
+    if not passageiro_encontrado:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"passageiro com {id} nao encontrado")       
+    
+    dados_atualizados = dados.model_dump(exclude_unset=True)
+    for chave, valor in dados_atualizados.items():
+        setattr(passageiro_encontrado, chave, valor)
 
     db.commit()
-    db.refresh(novo)
-    return novo
-
-#Deletar a classe
-@router.delete("/{id}")
-def deletar(id: int, db: Session = Depends(get_db)):
-    obj = db.query(Passageiro).get(id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Nenhum Passageiro não encontrado")
-
-    db.delete(obj)
-    db.commit()
-    return {"ok": True}
+    db.refresh(passageiro_encontrado)
+    return passageiro_encontrado

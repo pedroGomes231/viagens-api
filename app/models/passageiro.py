@@ -5,6 +5,6 @@ from app.database import Base
 class Passageiro(Base):
     __tablename__ = "passageiros"
 
-    id = Column(Integer, ForeignKey("usuarios.id"), primary_key=True)
+    id = Column(Integer, ForeignKey("usuarios.id_usuario"), primary_key=True)
 
     usuario = relationship("Usuario")
