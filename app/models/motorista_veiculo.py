@@ -1,8 +1,14 @@
-from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy import Column, BigInteger, Integer, DateTime, ForeignKey
 from app.database import Base
 
 class MotoristaVeiculo(Base):
     __tablename__ = "motorista_veiculo"
 
-    motorista_id = Column(Integer, ForeignKey("motoristas.id"), primary_key=True)
-    veiculo_id = Column(Integer, ForeignKey("veiculos.id"), primary_key=True)
+    
+    id_motorista = Column(BigInteger, ForeignKey("motorista.id_motorista"), primary_key=True)
+    
+  
+    id_veiculo = Column(Integer, ForeignKey("veiculo.id_veiculo"), primary_key=True) 
+    
+    datahora_inicio = Column(DateTime)
+    datahora_fim = Column(DateTime)

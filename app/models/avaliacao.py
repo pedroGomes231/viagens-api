@@ -1,11 +1,10 @@
-from sqlalchemy import Column, Integer, ForeignKey,DateTime
+from sqlalchemy import Column, BigInteger, Integer, DateTime
 from app.database import Base
 
 class Avaliacao(Base):
-    __tablename__ = "avaliacoes"
+    __tablename__ = "avaliacao"
 
-    id = Column(Integer, primary_key=True)
-    corrida_id = Column(Integer, ForeignKey("corridas.id"))
-    datahora_limite = Column(DateTime)
-    nota_motorista = Column(Integer)
+    id_avaliacao = Column(BigInteger, primary_key=True, autoincrement=True)
     nota_passageiro = Column(Integer)
+    nota_motorista = Column(Integer)
+    datahora_limite = Column(DateTime)

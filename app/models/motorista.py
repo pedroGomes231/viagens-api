@@ -1,12 +1,10 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, BigInteger, Numeric, ForeignKey
 from app.database import Base
 
 class Motorista(Base):
-    __tablename__ = "motoristas"
+    __tablename__ = "motorista"
 
-    id = Column(Integer, ForeignKey("usuarios.id_usuario"), primary_key=True)
-    cnh = Column(String, unique=True, nullable=False)
-    nome = Column(String, nullable=False)
-
-    usuario = relationship("Usuario")
+    id_motorista = Column(BigInteger, primary_key=True, autoincrement=True)
+    id_usuario = Column(BigInteger, ForeignKey("usuario.id_usuario"))
+    media_avaliacao = Column(Numeric(3, 2))
+    cnh = Column(BigInteger)

@@ -1,10 +1,9 @@
-from sqlalchemy import Column, Integer, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, BigInteger, Numeric, ForeignKey
 from app.database import Base
 
 class Passageiro(Base):
-    __tablename__ = "passageiros"
+    __tablename__ = "passageiro"
 
-    id = Column(Integer, ForeignKey("usuarios.id_usuario"), primary_key=True)
-
-    usuario = relationship("Usuario")
+    id_passageiro = Column(BigInteger, primary_key=True, autoincrement=True)
+    id_usuario = Column(BigInteger, ForeignKey("usuario.id_usuario"))
+    media_avaliacao = Column(Numeric(3, 2))
